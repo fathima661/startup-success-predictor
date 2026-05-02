@@ -7,15 +7,6 @@ from datetime import datetime
 from django.conf import settings
 
 # ==========================================================
-# OPTIONAL SHAP IMPORT (PREVENTS DEPLOY CRASH)
-# ==========================================================
-
-try:
-    import shap
-except ImportError:
-    shap = None
-
-# ==========================================================
 # LOGGING CONFIGURATION
 # ==========================================================
 
@@ -55,19 +46,31 @@ except Exception as e:
     raise RuntimeError("ML model failed to load")
 
 # ==========================================================
-# SHAP EXPLAINER (SAFE INITIALIZATION)
+# SHAP SAFE (LAZY LOADING - IMPORTANT FIX)
 # ==========================================================
 
 explainer = None
+shap = None
 
-try:
-    if shap is not None:
+def init_shap():
+    """
+    Lazy SHAP loader to prevent Render crash
+    """
+    global shap, explainer
+
+    if explainer is not None:
+        return
+
+    try:
+        import shap as shap_lib
+        shap = shap_lib
         explainer = shap.TreeExplainer(model)
-    else:
-        logger.warning("SHAP not installed - explainability disabled")
-except Exception as e:
-    logger.warning(f"SHAP explainer failed: {str(e)}")
-    explainer = None
+        logger.info("SHAP initialized successfully")
+
+    except Exception as e:
+        shap = None
+        explainer = None
+        logger.warning(f"SHAP disabled safely: {str(e)}")
 
 
 # ==========================================================
@@ -116,7 +119,6 @@ def prepare_input(funding, rounds, founded_year, country, category, competition_
 
     input_dict = {col: 0.0 for col in feature_columns}
 
-    # Numeric features
     input_dict["funding_rounds"] = rounds
     input_dict["startup_age"] = startup_age
     input_dict["founded_year"] = founded_year
@@ -124,7 +126,6 @@ def prepare_input(funding, rounds, founded_year, country, category, competition_
     input_dict["funding_per_round"] = funding_per_round
     input_dict["competition_density"] = competition_density
 
-    # One-hot encoding (safe)
     country_col = f"country_code_{country}"
     if country_col in input_dict:
         input_dict[country_col] = 1
@@ -159,10 +160,7 @@ def predict_startup_success(funding, rounds, founded_year, country, category, co
         )
 
         probability = float(model.predict_proba(input_df)[0][1])
-
         prediction = "Likely to Succeed" if probability >= threshold else "High Risk"
-
-        logger.info(f"Prediction success | Prob: {probability:.4f}")
 
         return {
             "probability": probability,
@@ -170,31 +168,26 @@ def predict_startup_success(funding, rounds, founded_year, country, category, co
             "status": "success"
         }
 
-    except ValueError as ve:
-        logger.warning(f"Validation error: {str(ve)}")
-        return {
-            "error": str(ve),
-            "status": "failed"
-        }
-
     except Exception as e:
         logger.error(f"Prediction failed: {str(e)}")
         return {
-            "error": "Prediction failed due to system error",
+            "error": str(e),
             "status": "failed"
         }
 
 
 # ==========================================================
-# SHAP EXPLANATION (SAFE)
+# SHAP EXPLANATION (SAFE + LAZY INIT)
 # ==========================================================
 
 def get_shap_explanation(input_df, top_n=10):
 
-    if explainer is None:
-        return []
-
     try:
+        init_shap()
+
+        if explainer is None:
+            return []
+
         shap_output = explainer(input_df)
 
         shap_values = shap_output.values if hasattr(shap_output, "values") else shap_output
@@ -214,7 +207,7 @@ def get_shap_explanation(input_df, top_n=10):
         return contributions[:top_n]
 
     except Exception as e:
-        logger.warning(f"SHAP failed: {str(e)}")
+        logger.warning(f"SHAP failed safely: {str(e)}")
         return []
 
 
@@ -229,13 +222,11 @@ def get_global_feature_importance(top_n=10):
 
             importances = model.feature_importances_
 
-            feature_importance = sorted(
+            return sorted(
                 zip(feature_columns, importances),
                 key=lambda x: x[1],
                 reverse=True
-            )
-
-            return feature_importance[:top_n]
+            )[:top_n]
 
         return []
 
