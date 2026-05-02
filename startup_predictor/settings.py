@@ -85,6 +85,7 @@ AUTH_USER_MODEL = "predictor.CustomUser"
 # --------------------------------------------------
 # DATABASE
 # --------------------------------------------------
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 DATABASES = {
     "default": dj_database_url.parse(
@@ -93,10 +94,7 @@ DATABASES = {
         ssl_require=True
     )
 }
-import sys
 
-if not os.getenv("DATABASE_URL"):
-    raise Exception("DATABASE_URL is missing in environment variables")
 
 
 # --------------------------------------------------
