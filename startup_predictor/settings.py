@@ -85,16 +85,19 @@ AUTH_USER_MODEL = "predictor.CustomUser"
 # --------------------------------------------------
 # DATABASE
 # --------------------------------------------------
-DATABASE_URL = os.getenv("DATABASE_URL")
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL not found in environment variables")
 
 DATABASES = {
     "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
+        DATABASE_URL,
         conn_max_age=600,
         ssl_require=True
     )
 }
-
 
 
 # --------------------------------------------------
@@ -184,7 +187,6 @@ if not DEBUG:
 
  
 
-import os
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
