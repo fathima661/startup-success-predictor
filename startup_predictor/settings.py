@@ -95,7 +95,7 @@ DATABASES = {
 }
 import sys
 
-if not os.getenv("DATABASE_URL") and "runserver" not in sys.argv:
+if not os.getenv("DATABASE_URL"):
     raise Exception("DATABASE_URL is missing in environment variables")
 
 
