@@ -1,0 +1,272 @@
+{% extends 'predictor/base.html' %}
+{% block content %}
+
+<div class="container-fluid px-3 px-sm-4 px-lg-5 py-4">
+
+    <!-- ================= LOGIN PROMPT ================= -->
+    {% if not user.is_authenticated %}
+    <div class="alert alert-warning d-flex justify-content-between align-items-center flex-wrap gap-2 shadow-sm">
+
+        <div>
+            <strong>Save this report.</strong>
+            Create an account to track your evaluations.
+        </div>
+
+        <div class="d-flex gap-2 mt-2 mt-md-0">
+
+            <!-- ✅ FIXED: added next -->
+            <a href="{% url 'signup' %}?next={{ request.path }}" class="btn btn-dark btn-sm">
+                Create Account
+            </a>
+
+            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-dark btn-sm">
+                Sign In
+            </a>
+
+        </div>
+
+    </div>
+    {% endif %}
+
+    <!-- ================= HEADER ================= -->
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Startup Intelligence Report</h2>
+        <p class="text-muted mb-1">AI-driven success probability analysis</p>
+        <small class="text-muted">Model v{{ model_version|default:"1.0" }}</small>
+    </div>
+
+    <!-- ================= MAIN CARD ================= -->
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-xl-9">
+
+            <div class="card shadow-lg border-0 p-3 p-md-5 rounded-4">
+
+                <!-- ================= PROBABILITY ================= -->
+                <div class="mb-5">
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted small">Success Probability</span>
+                        <span class="fw-bold">{{ probability }}%</span>
+                    </div>
+
+                    <div class="progress" style="height:12px; border-radius:20px;">
+                        <div id="probBar"
+                             class="progress-bar bg-dark"
+                             role="progressbar"
+                             style="width:0%;">
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ================= RATING ================= -->
+                <div class="text-center mb-5">
+                    <span class="badge px-4 py-3 fs-6 border border-dark text-dark bg-light">
+                        {{ rating }}
+                    </span>
+                </div>
+
+                <!-- ================= SUMMARY ================= -->
+                <div class="mb-5">
+
+                    <h6 class="text-uppercase text-muted mb-3">AI Summary</h6>
+
+                    <p class="text-muted" style="line-height:1.8;">
+                        {% if explanation %}
+                            {{ explanation }}
+                        {% else %}
+                            The model evaluated funding strength, market competition,
+                            ecosystem maturity, and startup age to estimate success probability.
+                        {% endif %}
+                    </p>
+
+                </div>
+
+                <!-- ================= BENCHMARK ================= -->
+                <div class="mb-5">
+
+                    <h6 class="text-uppercase text-muted mb-3">Benchmark Comparison</h6>
+
+                    <div class="row g-3 text-center">
+
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded-3 p-4 h-100">
+                                <div class="text-muted small">Industry Average</div>
+                                <div class="fs-3 fw-bold">{{ industry_average }}%</div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="border rounded-3 p-4 h-100">
+                                <div class="text-muted small">Difference</div>
+                                <div class="fs-3 fw-bold
+                                    {% if difference > 0 %}text-success
+                                    {% elif difference < 0 %}text-danger
+                                    {% endif %}">
+                                    {{ difference }}%
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <hr class="my-4">
+
+                <!-- ================= PERFORMANCE CHART ================= -->
+                <div class="mb-5">
+
+                    <h6 class="text-uppercase text-muted mb-3">
+                        Performance Visualization
+                    </h6>
+
+                    <div class="w-100 overflow-hidden">
+                        <canvas id="performanceChart" style="max-height:300px;"></canvas>
+                    </div>
+
+                </div>
+
+                <!-- ================= FEATURE IMPORTANCE ================= -->
+                <div class="mb-5">
+
+                    <h6 class="text-uppercase text-muted mb-3">Key Drivers</h6>
+
+                    {% if top_features %}
+
+                        <div class="list-group list-group-flush">
+
+                            {% for feature, importance in top_features %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0 flex-wrap gap-2">
+
+                                <span class="text-break">{{ feature }}</span>
+
+                                <span class="badge bg-light text-dark border">
+                                    {{ importance|floatformat:3 }}
+                                </span>
+
+                            </div>
+                            {% endfor %}
+
+                        </div>
+
+                    {% else %}
+                        <div class="text-muted small">
+                            Feature importance not available.
+                        </div>
+                    {% endif %}
+
+                </div>
+
+                <hr class="my-4">
+
+                <!-- ================= FEATURE CHART ================= -->
+                <div class="mb-5">
+
+                    <h6 class="text-uppercase text-muted mb-3">
+                        Feature Impact Chart
+                    </h6>
+
+                    <div class="w-100 overflow-hidden">
+                        <canvas id="featureChart"></canvas>
+                    </div>
+
+                </div>
+
+                <!-- ================= ACTION BUTTONS ================= -->
+                <div class="text-center d-grid gap-2">
+
+                    <a href="{% url 'evaluate' %}" class="btn btn-outline-dark px-4">
+                        Run Another Evaluation
+                    </a>
+
+                    <a href="{% url 'download_report' %}" class="btn btn-dark px-4">
+                        Download Report (PDF)
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- JS remains unchanged -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    let bar = document.getElementById("probBar");
+    let probability = {{ probability|default:0 }};
+    setTimeout(() => {
+        bar.style.width = probability + "%";
+    }, 300);
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+    const ctx1 = document.getElementById('performanceChart');
+
+    new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: ['Your Startup', 'Industry Average'],
+            datasets: [{
+                data: [{{ probability }}, {{ industry_average }}],
+                backgroundColor: ['#212529', '#e9ecef'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, max: 100 } }
+        }
+    });
+
+    const featureLabels = [
+        {% for f, i in top_features %}
+            "{{ f }}",
+        {% endfor %}
+    ];
+
+    const featureValues = [
+        {% for f, i in top_features %}
+            {{ i }},
+        {% endfor %}
+    ];
+
+    if (featureLabels.length > 0) {
+
+        const ctx2 = document.getElementById('featureChart');
+
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: featureLabels,
+                datasets: [{
+                    data: featureValues,
+                    backgroundColor: '#212529'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+    }
+
+});
+</script>
+
+{% endblock %}

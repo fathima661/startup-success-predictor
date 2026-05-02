@@ -1,0 +1,173 @@
+{% extends "predictor/base.html" %}
+
+{% block content %}
+
+<div class="container-fluid px-2 px-md-4">
+
+    <h2 class="fw-bold mb-4">Admin Dashboard</h2>
+
+    <!-- ================= STATS ================= -->
+    <div class="row g-3 g-md-4 mb-4">
+
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 p-3 h-100">
+                <h6 class="text-muted">Total Users</h6>
+                <h3 class="fw-bold">{{ total_users }}</h3>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 p-3 h-100">
+                <h6 class="text-muted">Total Evaluations</h6>
+                <h3 class="fw-bold">{{ total_evaluations }}</h3>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card shadow-sm border-0 p-3 h-100">
+                <h6 class="text-muted">Average Score</h6>
+                <h3 class="fw-bold text-success">{{ avg_score }}%</h3>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= USERS ================= -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+
+            <h5 class="fw-bold mb-3">User Management</h5>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="text-break">{{ u.email }}</td>
+
+                            <td>
+                                {% if u.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Blocked</span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ u.date_joined|date:"Y-m-d" }}</td>
+
+                            <td>
+                                {% if not u.is_staff %}
+                                <a href="{% url 'delete_user' u.id %}"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Delete this user?');">
+                                    Delete
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Protected</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No users</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= CATEGORY STATS ================= -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+
+            <h5 class="fw-bold mb-3">Top Categories</h5>
+
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Category</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for c in category_stats %}
+                        <tr>
+                            <td>{{ c.category }}</td>
+                            <td>{{ c.count }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted">No data</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= RECENT ACTIVITY ================= -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+
+            <h5 class="fw-bold mb-3">Recent Evaluations</h5>
+
+            <div class="table-responsive">
+                <table class="table table-striped mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Category</th>
+                            <th>Country</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for r in recent_records %}
+                        <tr>
+                            <td>{{ r.category }}</td>
+                            <td>{{ r.country }}</td>
+                            <td>
+                                <span class="badge bg-success">
+                                    {{ r.probability }}%
+                                </span>
+                            </td>
+                            <td>{{ r.created_at|date:"Y-m-d" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">No records yet</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

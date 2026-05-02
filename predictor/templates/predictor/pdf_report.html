@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #111;
+            line-height: 1.6;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h4 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .meta {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .box {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 6px;
+            page-break-inside: avoid;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin-top: 10px;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .grid div {
+            flex: 1;
+        }
+
+        .small {
+            font-size: 13px;
+            color: #333;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<h2>Startup Intelligence Report</h2>
+
+<div class="meta">
+    <p><span class="label">Probability:</span> {{ probability }}%</p>
+    <p><span class="label">Rating:</span> {{ rating }}</p>
+</div>
+
+<!-- ================= PERFORMANCE ================= -->
+<div class="box">
+    <h4>Performance Comparison</h4>
+    <img src="{{ chart1 }}" alt="Performance Chart">
+</div>
+
+<!-- ================= SUMMARY ================= -->
+<div class="box">
+    <h4>Summary</h4>
+    <p>{{ explanation }}</p>
+</div>
+
+<!-- ================= BENCHMARK ================= -->
+<div class="box">
+    <h4>Benchmark</h4>
+
+    <div class="grid">
+        <div>
+            <p class="small"><span class="label">Industry Average:</span></p>
+            <p>{{ industry_average }}%</p>
+        </div>
+
+        <div>
+            <p class="small"><span class="label">Difference:</span></p>
+            <p>{{ difference }}%</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= FEATURE IMPORTANCE ================= -->
+{% if chart2 %}
+<div class="box">
+    <h4>Feature Importance</h4>
+    <img src="{{ chart2 }}" alt="Feature Chart">
+</div>
+{% endif %}
+
+<!-- ================= KEY DRIVERS ================= -->
+<div class="box">
+    <h4>Key Drivers</h4>
+
+    <ul>
+        {% for f, i in top_features %}
+        <li><strong>{{ f }}</strong> : {{ i }}</li>
+        {% endfor %}
+    </ul>
+
+</div>
+
+</body>
+</html>

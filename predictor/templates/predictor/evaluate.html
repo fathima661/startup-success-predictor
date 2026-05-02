@@ -1,0 +1,190 @@
+{% extends "predictor/base.html" %}
+{% block content %}
+
+<div class="container-fluid px-3 px-sm-4 px-lg-5 py-4">
+
+    <!-- ================= HEADER ================= -->
+    <div class="text-center mb-4">
+        <h2 class="fw-bold">Startup Success Evaluation</h2>
+        <p class="text-muted mb-0">
+            AI-powered analysis of startup growth potential
+        </p>
+    </div>
+
+    <!-- ================= CARD ================= -->
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-lg-10 col-xl-9">
+
+            <div class="card shadow-lg border-0 rounded-4 p-3 p-md-5">
+
+                <!-- ================= FREE LIMIT ================= -->
+                {% if remaining_attempts is not None %}
+                <div class="alert alert-info d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+                    <span>
+                        Free Evaluations Left:
+                        <strong>{{ remaining_attempts }}</strong>
+                    </span>
+
+                    {% if remaining_attempts == 0 %}
+                    <a href="{% url 'login' %}?next={{ request.path }}"
+                       class="btn btn-sm btn-dark">
+                        Login to Continue
+                    </a>
+                    {% endif %}
+
+                </div>
+                {% endif %}
+
+                <!-- ================= MESSAGES ================= -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert
+                            {% if message.tags == 'error' %}alert-danger
+                            {% elif message.tags == 'warning' %}alert-warning
+                            {% else %}alert-info{% endif %}
+                            alert-dismissible fade show small">
+
+                            {{ message }}
+
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="alert"></button>
+
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- ================= FORM ================= -->
+                <form method="POST" id="evalForm">
+                    {% csrf_token %}
+
+                    <div class="row g-3 g-md-4">
+
+                        <!-- FUNDING -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Funding ($)</label>
+                            <input type="number"
+                                   name="funding"
+                                   id="funding"
+                                   class="form-control"
+                                   required
+                                   step="any"
+                                   min="0"
+                                   placeholder="e.g. 2500000"
+                                   value="{{ request.POST.funding }}">
+                        </div>
+
+                        <!-- ROUNDS -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Funding Rounds</label>
+                            <select name="rounds" id="rounds" class="form-select" required>
+
+                                {% for r in rounds %}
+                                <option value="{{ r }}"
+                                    {% if request.POST.rounds == r|stringformat:"s" %}selected{% endif %}>
+                                    {{ r }}
+                                </option>
+                                {% endfor %}
+
+                            </select>
+                        </div>
+
+                        <!-- YEAR -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Founded Year</label>
+                            <select name="founded_year" class="form-select" required>
+
+                                {% for y in years %}
+                                <option value="{{ y }}"
+                                    {% if request.POST.founded_year == y|stringformat:"s" %}selected{% endif %}>
+                                    {{ y }}
+                                </option>
+                                {% endfor %}
+
+                            </select>
+                        </div>
+
+                        <!-- COUNTRY -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Country</label>
+                            <select name="country" class="form-select" required>
+
+                                <option value="">Select</option>
+
+                                {% for code, name in countries %}
+                                <option value="{{ code }}"
+                                    {% if request.POST.country == code %}selected{% endif %}>
+                                    {{ name }}
+                                </option>
+                                {% endfor %}
+
+                            </select>
+                        </div>
+
+                        <!-- CATEGORY -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Industry</label>
+                            <select name="category" class="form-select" required>
+
+                                <option value="">Select</option>
+
+                                {% for c in categories %}
+                                <option value="{{ c }}"
+                                    {% if request.POST.category == c %}selected{% endif %}>
+                                    {{ c }}
+                                </option>
+                                {% endfor %}
+
+                            </select>
+                        </div>
+
+                        <!-- COMPETITION -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold">Market Competition</label>
+                            <select name="competition_level" class="form-select" required>
+
+                                <option value="">Select</option>
+                                <option value="emerging">Emerging</option>
+                                <option value="competitive">Competitive</option>
+                                <option value="high">High</option>
+                                <option value="saturated">Saturated</option>
+
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <!-- ================= SUBMIT ================= -->
+                    <div class="d-grid mt-4 mt-md-5">
+                        <button type="submit"
+                                id="submitBtn"
+                                class="btn btn-dark btn-lg rounded-3"
+                                {% if remaining_attempts == 0 and not request.user.is_authenticated %}
+                                disabled
+                                {% endif %}>
+                            Generate AI Report
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= UX SCRIPT ================= -->
+<script>
+document.getElementById("evalForm").addEventListener("submit", function () {
+    const btn = document.getElementById("submitBtn");
+    btn.innerHTML = "Analyzing...";
+    btn.disabled = true;
+});
+</script>
+
+{% endblock %}

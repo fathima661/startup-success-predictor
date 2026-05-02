@@ -1,0 +1,169 @@
+{% extends 'predictor/base.html' %}
+{% block content %}
+
+<div class="container-fluid px-3 px-sm-4 px-lg-5 mt-4">
+
+    <!-- ================= HEADER ================= -->
+    <div class="row align-items-center mb-4">
+
+        <div class="col-12 col-md-6 mb-3 mb-md-0">
+            <h2 class="fw-bold mb-0">Your Dashboard</h2>
+        </div>
+
+        <div class="col-12 col-md-6 text-md-end">
+            <!-- Removed + New Evaluation button -->
+        </div>
+
+    </div>
+
+    <!-- ================= STATS ================= -->
+    <div class="row g-4 mb-4 justify-content-center">
+
+        <div class="col-12 col-sm-6 col-lg-5 col-xl-4">
+            <div class="card shadow-sm border-0 p-4 h-100 text-center">
+                <h6 class="text-muted">Total Evaluations</h6>
+                <h2 class="fw-bold mb-0">{{ total }}</h2>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-lg-5 col-xl-4">
+            <div class="card shadow-sm border-0 p-4 h-100 text-center">
+                <h6 class="text-muted">Average Success Score</h6>
+                <h2 class="fw-bold mb-0">{{ average_score }}%</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= CHART ================= -->
+    <div class="row justify-content-center mb-4">
+
+        <div class="col-12 col-xl-10">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-header bg-white fw-bold">
+                    Evaluation Probability Trend
+                </div>
+
+                <div class="card-body">
+
+                    <div style="height: 320px;">
+                        <canvas id="evaluationChart"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= HISTORY ================= -->
+    <div class="row justify-content-center">
+
+        <div class="col-12 col-xl-11">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-header bg-white fw-bold">
+                    Evaluation History
+                </div>
+
+                <div class="card-body p-0">
+
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle mb-0">
+
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Category</th>
+                                    <th>Country</th>
+                                    <th>Score</th>
+                                    <th>Rating</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                {% for record in records %}
+                                <tr>
+
+                                    <td class="text-nowrap">
+                                        {{ record.created_at|date:"Y-m-d" }}
+                                    </td>
+
+                                    <td>{{ record.category }}</td>
+                                    <td>{{ record.country }}</td>
+
+                                    <td>
+                                        <strong>{{ record.probability }}%</strong>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge bg-{{ record.badge_class }}">
+                                            {{ record.rating_label }}
+                                        </span>
+                                    </td>
+
+                                </tr>
+
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">
+                                        No evaluations yet.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= CHART SCRIPT ================= -->
+<script>
+
+const ctx = document.getElementById('evaluationChart');
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            label: 'Success Probability',
+            data: {{ chart_values|safe }},
+            borderWidth: 3,
+            fill: false,
+            tension: 0.2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+
+</script>
+
+{% endblock %}

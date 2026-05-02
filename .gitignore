@@ -1,0 +1,55 @@
+# =========================
+# Django
+# =========================
+__pycache__/
+*.py[cod]
+*.log
+*.pot
+*.pyc
+*.sqlite3
+
+# Database (local only)
+db.sqlite3
+
+# =========================
+# Environment variables
+# =========================
+.env
+
+# =========================
+# Django media/static
+# =========================
+media/
+staticfiles/
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Python virtual env
+# =========================
+venv/
+env/
+ENV/
+
+# =========================
+# Django migrations (optional safety)
+# =========================
+# (DO NOT UNCOMMENT unless you know what you're doing)
+# */migrations/__pycache__/
+
+# =========================
+# Deployment
+# =========================
+*.bak
