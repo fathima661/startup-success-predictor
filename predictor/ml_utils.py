@@ -1,11 +1,19 @@
 import os
 import joblib
-import shap
 import numpy as np
 import pandas as pd
 import logging
 from datetime import datetime
 from django.conf import settings
+
+# ==========================================================
+# OPTIONAL SHAP IMPORT (PREVENTS DEPLOY CRASH)
+# ==========================================================
+
+try:
+    import shap
+except ImportError:
+    shap = None
 
 # ==========================================================
 # LOGGING CONFIGURATION
@@ -46,11 +54,19 @@ except Exception as e:
     logger.error(f"Model loading failed: {str(e)}")
     raise RuntimeError("ML model failed to load")
 
-# SHAP (initialized once)
+# ==========================================================
+# SHAP EXPLAINER (SAFE INITIALIZATION)
+# ==========================================================
+
+explainer = None
+
 try:
-    explainer = shap.TreeExplainer(model)
+    if shap is not None:
+        explainer = shap.TreeExplainer(model)
+    else:
+        logger.warning("SHAP not installed - explainability disabled")
 except Exception as e:
-    logger.warning("SHAP explainer failed, disabling explainability")
+    logger.warning(f"SHAP explainer failed: {str(e)}")
     explainer = None
 
 
@@ -100,7 +116,7 @@ def prepare_input(funding, rounds, founded_year, country, category, competition_
 
     input_dict = {col: 0.0 for col in feature_columns}
 
-    # Numeric Features
+    # Numeric features
     input_dict["funding_rounds"] = rounds
     input_dict["startup_age"] = startup_age
     input_dict["founded_year"] = founded_year
@@ -131,10 +147,8 @@ def prepare_input(funding, rounds, founded_year, country, category, competition_
 def predict_startup_success(funding, rounds, founded_year, country, category, competition_density):
 
     try:
-        # Step 1: Validate
         validate_inputs(funding, rounds, founded_year, country, category, competition_density)
 
-        # Step 2: Prepare input
         input_df = prepare_input(
             funding,
             rounds,
@@ -144,14 +158,9 @@ def predict_startup_success(funding, rounds, founded_year, country, category, co
             competition_density
         )
 
-        # Step 3: Predict
         probability = float(model.predict_proba(input_df)[0][1])
 
-        prediction = (
-            "Likely to Succeed"
-            if probability >= threshold
-            else "High Risk"
-        )
+        prediction = "Likely to Succeed" if probability >= threshold else "High Risk"
 
         logger.info(f"Prediction success | Prob: {probability:.4f}")
 
@@ -177,7 +186,7 @@ def predict_startup_success(funding, rounds, founded_year, country, category, co
 
 
 # ==========================================================
-# SHAP EXPLAINABILITY
+# SHAP EXPLANATION (SAFE)
 # ==========================================================
 
 def get_shap_explanation(input_df, top_n=10):
@@ -188,25 +197,19 @@ def get_shap_explanation(input_df, top_n=10):
     try:
         shap_output = explainer(input_df)
 
-        if hasattr(shap_output, "values"):
-            shap_values = shap_output.values
-        else:
-            shap_values = shap_output
+        shap_values = shap_output.values if hasattr(shap_output, "values") else shap_output
 
         if len(shap_values.shape) == 3:
             shap_values = shap_values[:, :, 1]
 
         shap_values = shap_values[0]
 
-        contributions = []
+        contributions = [
+            (feature, float(value))
+            for feature, value in zip(input_df.columns, shap_values)
+        ]
 
-        for feature, value in zip(input_df.columns, shap_values):
-            contributions.append((feature, float(value)))
-
-        contributions.sort(
-            key=lambda x: abs(x[1]),
-            reverse=True
-        )
+        contributions.sort(key=lambda x: abs(x[1]), reverse=True)
 
         return contributions[:top_n]
 
