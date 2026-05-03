@@ -15,7 +15,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret")
+from django.core.exceptions import ImproperlyConfigured
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise ImproperlyConfigured("SECRET_KEY is missing in environment variables")
 
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
